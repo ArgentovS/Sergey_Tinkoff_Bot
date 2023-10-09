@@ -9,6 +9,7 @@ class ActualInstruments:
     def __init__(self):
         self.is_trading = False  # Признак того что в текущий день торги проводятся (по умолчанию False)
         self.trading_day = now().strftime('%y-%m-%d')  # Ближайшая дата торгов (по умолчанию текущая дата)
+        self.bot: Bot = None
 
     @timeit
     async def fit(self):

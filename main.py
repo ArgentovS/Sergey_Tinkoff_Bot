@@ -2,16 +2,19 @@ import asyncio
 import datetime
 from settings import *
 from tools import *
+from handlers.commands import router as com_rout
 
 
-async def start_bot():
+async def start_bot(actual_shares):
     """
     Сопрограмма конфигурации и запуск бота
     :return: NoReturn
     """
     bot = Bot(token=config['Telegram']['api'], parse_mode=ParseMode.HTML)  # создаём экземпляр бота
     dp = Dispatcher(bot=bot, storage=MemoryStorage())  # создаём экземпляр диспетчера
-    dp.include_router(router)  # подключаем роутер к диспетчеру
+    dp.include_routers(com_rout)  # подключаем роутер к диспетчеру
+    bot.actual_shares = actual_shares
+    bot.actual_shares.bot = bot
     await bot.delete_webhook(drop_pending_updates=True)  # игнорируем ранее поданные боту запросы
     await dp.start_polling(bot)  # запускаем асинхронного бота
 
@@ -24,7 +27,7 @@ async def monitoring_exchange(actual_shares):
     """
     while True:
         # Проверяем время для запуска по расписанию актуализации расписания и параметров акций Мосбиржи
-        if utc3(now()).strftime('%H') == '10':
+        if utc3(now()).strftime('%H') == '11':
             await actual_shares.fit()
             print(actual_shares.message_shedulers)
             #actual_shares.prn_exchanges()
@@ -32,6 +35,15 @@ async def monitoring_exchange(actual_shares):
             #actual_shares.prn_shedulers()
 
             await asyncio.sleep(60)
+        
+        # Обработчик изменения данных
+        event_data = {} # какие то данные взятые из БД по пользователям
+        if True:
+            if actual_shares.bot != None:
+                actual_shares.bot.send_message(event_data['chat_id'], actual_shares.message_shedulers)
+            else:
+                pass
+            
 
 
 async def main(actual_shares):
@@ -41,7 +53,7 @@ async def main(actual_shares):
     :return: NoReturn
     """
     # Конфигурация и запуск бота
-    task1 = asyncio.create_task(start_bot())
+    task1 = asyncio.create_task(start_bot(actual_shares))
     # Мониторинг расписаний Мосбиржи и формирование базы
     task2 = asyncio.create_task(monitoring_exchange(actual_shares))
     # Запускаем задачи асинхронно
