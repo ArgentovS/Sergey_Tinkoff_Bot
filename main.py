@@ -27,22 +27,22 @@ async def monitoring_exchange(actual_shares):
     """
     while True:
         # Проверяем время для запуска по расписанию актуализации расписания и параметров акций Мосбиржи
-        if utc3(now()).strftime('%H') == '11':
+        if utc3(now()).strftime('%H') == '20':
             await actual_shares.fit()
             print(actual_shares.message_shedulers)
             #actual_shares.prn_exchanges()
             #actual_shares.prn_shares()
             #actual_shares.prn_shedulers()
 
-            await asyncio.sleep(60)
+        await asyncio.sleep(60)
         
         # Обработчик изменения данных
         event_data = {} # какие то данные взятые из БД по пользователям
-        if True:
-            if actual_shares.bot != None:
-                actual_shares.bot.send_message(event_data['chat_id'], actual_shares.message_shedulers)
-            else:
-                pass
+        # if True:
+        #     if actual_shares.bot != None:
+        #         actual_shares.bot.send_message(event_data['chat_id'], actual_shares.message_shedulers)
+        #     else:
+        #         pass
             
 
 
