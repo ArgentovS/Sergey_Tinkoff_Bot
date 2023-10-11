@@ -5,6 +5,12 @@ from tools import *
 from handlers.commands import router as com_rout
 
 
+async def start_market_survey():
+    pass
+
+
+
+
 async def start_bot(actual_shares):
     """
     Сопрограмма конфигурации и запуск бота
@@ -26,14 +32,34 @@ async def monitoring_exchange(actual_shares):
     :return: NoReturn
     """
     while True:
-        # Проверяем время для запуска по расписанию актуализации расписания и параметров акций Мосбиржи
-        if utc3(now()).strftime('%H') == '20':
-            await actual_shares.fit()
-            print(actual_shares.message_shedulers)
-            #actual_shares.prn_exchanges()
-            #actual_shares.prn_shares()
-            #actual_shares.prn_shedulers()
+        # Проверяем время для запуска ежедневной актуализации расписания и параметров акций Мосбиржи
+        if utc3(now()).strftime('%H') == '14':
+            await actual_shares.fit()  # Заполняем расписание на следующие дни (в 03:06 ночи каждого дня)
+            if utc3(now()).strftime('%H') == '14':
+                for user_id in [389726986, 6251198210]:  # Отправляем расписание пользователям
+                    await actual_shares.bot.send_message(chat_id=user_id, text=actual_shares.message_shedulers)
 
+            if actual_shares.is_trading:  # Определяем действия для торгового дня
+                await start_market_survey()  # Запускаем запросы к АПИ и расчёты наблюдаемых параметров
+            else:  # Определяем действия для не торгового дня
+                if utc3(now()).strftime('%H:%m') == '03:06': #
+
+
+
+                    for exchange in actual_shares.shedulers.items():
+                        while now() >= exchange[1][0].start_time:
+                            if now() >= exchange[1][0].end_time:
+                                pass
+                    # exchang
+                    # while now() <= exchange[1][0].end_time:
+                    #     if now() =
+                    #         exchange[1][0].start_time < now() < exchange[1][0].end_time:
+
+
+
+
+
+            print(actual_shares.message_shedulers)
         await asyncio.sleep(60)
         
         # Обработчик изменения данных

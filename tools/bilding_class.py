@@ -18,27 +18,27 @@ class ActualInstruments:
         :return: сообщение с расписанием
         """
         self.__all_params = await async_get_schedules()  # Асинхронный запрос в Тинкофф АПИ
-        self.exchanges = self.__all_params[0]  # Множество секций торговли акциями на Мосбирже
-        self.shares = self.__all_params[1]  # Список акций, торгуемых на Мосбирже (тип данных Share)
-        self.shedulers = self.__all_params[2]  # Словарь секций акций Мосбиржи с расписаниями торгов на несколько дней
+        self.exchanges = self.__all_params[0]  # Словарь секций торговли акциями на Мосбирже со списком акций
+        self.shedulers = self.__all_params[1]  # Словарь секций акций Мосбиржи с расписаниями торгов на несколько дней
 
         # Формируем сообщение о расписании торгов на сегодня или на ближайший торговый день (ЕГО НАДО ПЕРЕДАТЬ В БОТ!)
-        self.message_shedulers = 'Расписание на сегодня: '
+        self.message_shedulers = 'Расписание торгов на сегодня:\n'
         for __exchange in self.shedulers.keys():
             if self.shedulers[__exchange][0].is_trading_day:  # Если текущая дата - дата торгов на Мосбирже
                 self.is_trading = True
-                self.message_shedulers += (f' |  {__exchange}:'
-                                           f' c {utc3(self.shedulers[__exchange][0].start_time).strftime("%H-%M")}'
-                                           f' до {utc3(self.shedulers[__exchange][0].end_time).strftime("%H-%M")} ')
+                self.message_shedulers += (f'\n |  {__exchange}:\n'
+                                           f'    c {utc3(self.shedulers[__exchange][0].start_time).strftime("%H-%M")}'
+                                           f' до {utc3(self.shedulers[__exchange][0].end_time).strftime("%H-%M")}\n')
         if not self.is_trading:
             for day in range(len(self.shedulers[__exchange])-1, 0, -1):
-                self.message_shedulers = f'Расписание на {self.shedulers[__exchange][day].date.strftime("%y-%m-%d")}: '
+                self.message_shedulers = (f'Сегодня торгов нет\n'
+                                          f'Расписание торгов на {self.shedulers[__exchange][day].date.strftime("%y-%m-%d")}:\n')
                 for __exchange in self.shedulers.keys():
                     if self.shedulers[__exchange][day].is_trading_day:
                         self.trading_day = self.shedulers[__exchange][day].date.strftime('%y-%m-%d')
-                        self.message_shedulers += (f' |  {__exchange}:'
-                                                   f' c {utc3(self.shedulers[__exchange][day].start_time).strftime("%H-%M")}'
-                                                   f' до {utc3(self.shedulers[__exchange][day].end_time).strftime("%H-%M")} ')
+                        self.message_shedulers += (f'\n |  {__exchange}:\n'
+                                                   f'    c {utc3(self.shedulers[__exchange][day].start_time).strftime("%H-%M")}'
+                                                   f' до {utc3(self.shedulers[__exchange][day].end_time).strftime("%H-%M")}\n')
 
     def prn_shares(self):
         print(self.shares)

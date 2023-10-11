@@ -12,19 +12,19 @@ async def get_account():
         await client.users.get_accounts()
 
 
-# Слпрограмма запроса через ТинькоффАПИ расписаний, секций и акций, торгуемых на Мосбирже
+# Сопрограмма запроса через ТинькоффАПИ расписаний, секций и акций, торгуемых на Мосбирже
 async def async_get_schedules():
     async with AsyncClient(INVEST_TOKEN) as client:
         # Запросим параметры акций, которые торгуются на Мосбирже
-        all_shares = await client.instruments.shares()
+        shares = await client.instruments.shares()
+        morx_exchanges = dict()  # Множество секций Мосбиржи, на котрой торгуются акции
 
-        morx_exchanges = set()  # Множество секций Мосбиржи, на котрой торгуются акции
-        moex_shares = list()   # Список акций, на которые торгуются на Мосбирже
-
-        for all_share in all_shares.instruments:
-            if all_share.real_exchange == 1:  # Признак торговли акцией на Мосбирже
-                morx_exchanges.add(all_share.exchange)
-                moex_shares.append(all_share)
+        for share in shares.instruments:
+            if share.real_exchange == 1:  # Признак торговли акцией на Мосбирже
+                if share.exchange in morx_exchanges.keys():
+                    morx_exchanges[share.exchange].append(share)
+                else:
+                    morx_exchanges[share.exchange] = [share]
 
         # Запросим параметры расписаний секций Мосбиржи, на которых торгуются акции
         schedules = await client.instruments.trading_schedules(from_=now())
@@ -34,7 +34,7 @@ async def async_get_schedules():
             if exchange.exchange in morx_exchanges:
                 moex_schedules[exchange.exchange] = exchange.days  # Заполняется данным в формате Тинькофф-АПИ days
 
-    return morx_exchanges, moex_shares, moex_schedules
+    return morx_exchanges, moex_schedules
 
 
 
