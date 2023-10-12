@@ -36,8 +36,8 @@ async def get_schedules():
 
 
 # Сопрограмма запуска списка задач для асинхронных запросов акций, торгуемых в текущий момент на Мосбирже
-async def create_requests_candles(figis, actual_shares, users):
-    tasks = [get_last_candle(figi, actual_shares ,users) for figi in figis]
+async def create_requests_candles(users, actual_shares, figis):
+    tasks = [get_last_candle(users, actual_shares, figi) for figi in figis]
     loop = asyncio.get_event_loop()
     for task in tasks:
         loop.create_task(task)
@@ -50,7 +50,7 @@ async def get_last_candle(users, actual_shares, figi=None):
             volume_count = 0
             volume_sum = 0
             async for candle in client.get_all_candles(
-                    figi=figi,
+                    figi=figi[0],
                     from_=now()-timedelta(minutes=252),
                     to=now(),
                     interval=CandleInterval.CANDLE_INTERVAL_1_MIN,
@@ -59,13 +59,13 @@ async def get_last_candle(users, actual_shares, figi=None):
                     volume = candle.volume
                     volume_count += 1
                     volume_sum += volume
-                    time = candle.time
-
+                    time_c = utc3(candle.time)
+                    now_time = utc3(now())
                     if volume_sum:
                         volume_average = volume_sum / volume_count
                         # candle_time, volume, is_complete = candle.time, candle.volume, candle.is_complete
-                        # print(candle_time, figi, now_time,
-                        #       f'время подсчёта: +{now_time-candle.time-timedelta(minutes=1)-timedelta(seconds=delay_time)} сек.')
+                        # print(time_c, figi, now_time,
+                        #       f'время подсчёта: +{now_time-time_c-timedelta(minutes=1)-timedelta(seconds=15)} сек.')
                         # # await set_collect_1_min_candels(candle_time,
                         # #                                 figi,
                         #                                 volume,
@@ -74,17 +74,21 @@ async def get_last_candle(users, actual_shares, figi=None):
                 except Exception as E:
                     pass
                         #logger.debug(f'Ошибка выполнения запроса {E}')
+                    print(f'Ошибка {E}')
                         # print('1970-01-01 00:00:00+00:00', figi, 0, False, now_time)
                         # await set_collect_1_min_candels('1970-01-01 00:00:00+00:00',
                         #                                 figi,
                         #                                 0,
                         #                                 False,
                         #                                 now_time)
-            if volume_sum and (volume_average*1.5 > volume or volume_average*1.5 < volume):
+            if volume_sum and volume_average*1.5 < volume:
                 #logger.info(f'{figi}, Среднее: {volume_average}, Свеча: {volume} время свечи: {time}')
-                text = f'Время: {candle.time.strftime("%H:%m")} |  Акция: {figi} |\n'\
-                           f'Средний объём на {volume_count} свечах: {volume_average} |\n'\
-                           f'Объём последней свечи: {volume} ({int((volume-volume_average)/volume_average)}%)'
+                text = f'Время: {time_c.strftime("%H:%M")} |  Акция: `{figi[1]}` |\n'\
+                           f'Средний объём на {volume_count} свечах: {round(volume_average)} |\n'\
+                           f'Объём последней свечи: {volume} '\
+                           f'(+{round(((volume-volume_average)/volume_average)*100)}%)'
+                print(f'+{now_time-time_c-timedelta(minutes=1)-timedelta(seconds=15)} сек.'
+                      f'{text}')
                 await one_message(users, actual_shares, text)
 
 

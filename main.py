@@ -21,12 +21,12 @@ async def start_market_survey(actual_shares, users):
         if actual_shares.shedulers[exchanxe][0].start_time <= now() <= actual_shares.shedulers[exchanxe][0].end_time:
             # Формируем запросы по акциям, которые торгуются в соответствующих секциях
             for share in actual_shares.exchanges[exchanxe]:
-                figis.append(share.figi)
+                figis.append((share.figi, share.ticker))
 
         # Формируем асинхронные запросы по акциям в активных секциях
         delay_time = 15
         while now().second == delay_time:
-            await create_requests_candles(figis, actual_shares, users)
+            await create_requests_candles(users, actual_shares, figis)
             await asyncio.sleep(1)
             # Проверяем закончился ли торговый день на всех секциях
             if now() >= actual_shares.shedulers[exchanxe][0].end_time:
@@ -68,9 +68,9 @@ async def monitoring_exchange(actual_shares):
     :return: NoReturn
     """
     while True:
-        time_test_night, time_test_morning = '04', '04'  # время актуализации расписания и выдачи утреннего сообщения
+        time_test_night, time_test_morning = '11', '11'  # время актуализации расписания и выдачи утреннего сообщения
         # Формируем перечень пользователей, которым направляется сообщение
-        users = [389726986, 6251198210]  # , 228248763, 2022125420]
+        users = [389726986, 6251198210, 228248763, 2022125420]
 
         # Проверяем время для запуска ежедневной актуализации расписания и параметров акций Мосбиржи
         if utc3(now()).strftime('%H') == time_test_night:

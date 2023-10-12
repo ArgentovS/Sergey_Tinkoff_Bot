@@ -10,7 +10,8 @@ async def one_message(users, actual_shares, text):
     :return: NoReturn
     """
     async def message_to_bot(user_id, actual_shares, text):
-        await actual_shares.bot.send_message(chat_id=user_id, text=text)
+        await actual_shares.bot.send_message(chat_id=user_id, text=text,
+                                             parse_mode='MarkDown')
 
     tasks = [message_to_bot(user_id, actual_shares, text) for user_id in users]
     loop = asyncio.get_event_loop()
