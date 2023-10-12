@@ -40,7 +40,7 @@ async def collect_candle(limit=0):
 async def set_collect_1_min_candels(candle_time, figi, volume, is_complete, now_time):
     loop = asyncio.get_event_loop()
     conn = await aiomysql.connect(host=config['SQL']['host'],
-                                    port=config.getint('SQL', 'host'),
+                                    port=3306,
                                     user=config['SQL']['user'],
                                     password=config['SQL']['password'],
                                     db=config['SQL']['db_name'],

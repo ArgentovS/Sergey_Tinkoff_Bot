@@ -28,7 +28,8 @@ class ActualInstruments:
                 self.is_trading = True
                 self.message_shedulers += (f'\n |  {__exchange}:\n'
                                            f'    c {utc3(self.shedulers[__exchange][0].start_time).strftime("%H-%M")}'
-                                           f' до {utc3(self.shedulers[__exchange][0].end_time).strftime("%H-%M")}\n')
+                                           f' до {utc3(self.shedulers[__exchange][0].end_time).strftime("%H-%M")}\n'
+                                           f'    ({len(self.exchanges[__exchange])} акций)')
         if not self.is_trading:
             for day in range(len(self.shedulers[__exchange])-1, 0, -1):
                 self.message_shedulers = (f'Сегодня торгов нет\n'
@@ -38,45 +39,8 @@ class ActualInstruments:
                         self.trading_day = self.shedulers[__exchange][day].date.strftime('%y-%m-%d')
                         self.message_shedulers += (f'\n |  {__exchange}:\n'
                                                    f'    c {utc3(self.shedulers[__exchange][day].start_time).strftime("%H-%M")}'
-                                                   f' до {utc3(self.shedulers[__exchange][day].end_time).strftime("%H-%M")}\n')
-
-    def prn_shares(self):
-        print(self.shares)
-        return self.shares
-
-    def prn_exchanges(self):
-        print(self.exchanges)
-        return self.exchanges
-
-    def prn_shedulers(self):
-        print(self.shedulers)
-        return self.shedulers
-
-
-class AlertGenerator:
-
-    def __init__(self, time_cn=0, volume_cn=0):
-        self.__time_cn = time_cn
-        self.__volume_cn = volume_cn
-
-    @property
-    def time_cn(self):
-        return self.__time_cn
-
-    @time_cn.setter
-    def time_cn(self, t):
-        if t > 0:
-            self.__time_cn = t
-        else:
-            raise ValueError
-
-    @property
-    def volume_cn(self):
-        return self.__volume_cn
-
-    @volume_cn.setter
-    def volume_cn(self, v):
-        if v > 0:
-            self.volume_cn = v
-        else:
-            raise ValueError
+                                                   f' до {utc3(self.shedulers[__exchange][day].end_time).strftime("%H-%M")}\n'
+                                                   f'    ({len(self.exchanges[__exchange])} акций)')
+        logger.info(f'\n            Получены актуальные расписания на '
+                    f'{now().strftime("%y-%m-%d %H:%M:%S")} UTC+00\n'
+                    f'{self.message_shedulers}')

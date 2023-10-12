@@ -9,4 +9,5 @@ lib64
 include
 pyvenv.cfg
 venv/
-1/
+jypiter_test/
+test.py
