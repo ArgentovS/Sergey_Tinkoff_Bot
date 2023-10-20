@@ -68,7 +68,7 @@ async def monitoring_exchange(actual_shares):
     :return: NoReturn
     """
     while True:
-        time_test_night, time_test_morning = '13', '13'  # время актуализации расписания и выдачи утреннего сообщения
+        time_test_night, time_test_morning = '17', '17'  # время актуализации расписания и выдачи утреннего сообщения
         # Формируем перечень пользователей, которым направляется сообщение
         users = [389726986]  # 6251198210]  #, 228248763, 2022125420]
 

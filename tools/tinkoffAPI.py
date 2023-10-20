@@ -44,14 +44,29 @@ async def create_requests_candles(users, actual_shares, figis):
 async def get_last_candle(users, actual_shares, figi=None):
     candles = list()  # список полученных свечей
     async with AsyncClient(INVEST_TOKEN) as client:
-            async for candle in client.get_all_candles(figi=figi[0], from_=now()-timedelta(minutes=252),
-                                                       to=now(), interval=CandleInterval.CANDLE_INTERVAL_1_MIN):
-                try:
-                    candles.append(candle)
-                except BaseException as E:
-                    logger.debug(f'Ошибка выполнения запроса к Тинькофф АПИ {E}')
-                    pass
-            await message_huge_volume(figi, candles, users, actual_shares)  # Формируем сообщение в телеграм
+        async for candle in client.get_all_candles(figi=figi[0], from_=now()-timedelta(minutes=252),
+                                                   to=now(), interval=CandleInterval.CANDLE_INTERVAL_1_MIN):
+            try:
+                candles.append(candle)
+            except BaseException as E:
+                logger.debug(f'Ошибка выполнения запроса к Тинькофф АПИ {E}')
+                pass
+
+        # Формируем текст сообщения если объём вырос на коэффициент
+        EXCESS_VOLUME = 1.5
+        volumes_penultimate, volume_avg = list(), 1  # Средний объём предпоследних 252 свечей
+        for candle in candles[:-1]:
+            volumes_penultimate.append(candle.volume)
+        volume_avg = sum(volumes_penultimate) / len(volumes_penultimate)
+        if candle.volume >= EXCESS_VOLUME * volume_avg:
+            text = message_huge_volume(figi, candles, users, actual_shares)  # Формируем сообщение в телеграм
+            print(f'+{now() - candles[-1:][0].time - timedelta(minutes=1) - timedelta(seconds=15)} сек.'
+                  f'{text}')
+            # Отправляем сообщения в телеграм
+            await one_message(users, actual_shares, text)
+
+    # if volume_last >= 1.5 * volume_avg and int(candles[-1:][0].time.strftime("%M")) == int(
+    #         now().time.strftime("%M")) - 1:
 
 
 # Сопрограмма запроса через ТинькоффАПИ данных об аккаунте пользователя

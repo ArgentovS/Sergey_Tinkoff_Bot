@@ -19,8 +19,8 @@ async def one_message(users, actual_shares, text):
     logger.info(f'\n            Отправлены сообщения {len(users)} пользователям')
 
 
-# Сопрограмма формирования текста сообщения при резком росте объёма
-async def message_huge_volume(figi, candles, users, actual_shares):
+# Функция формирования текста сообщения при резком росте объёма
+def message_huge_volume(figi, candles, users, actual_shares):
 
     # Расчёт статических параметров сообщения
     time_last = utc3(candles[-1:][0].time).strftime("%H:%M")                 # время последней свечи
@@ -31,10 +31,6 @@ async def message_huge_volume(figi, candles, users, actual_shares):
                        candles[-1:][0].close.nano * 1e-9, 2)
 
     volume_last = candles[-1:][0].volume                               # Объём последней свечи
-    volumes_penultimate, volume_avg = list(), 1                             # Средний объём предпоследних 252 свечей
-    for candle in candles[:-1]:
-        volumes_penultimate.append(candle.volume)
-    volume_avg = sum(volumes_penultimate) / len(volumes_penultimate)
 
     # Расчёт динамических параметров сообщения
     if price_penultimate < price_last:
@@ -46,7 +42,10 @@ async def message_huge_volume(figi, candles, users, actual_shares):
     else:
         price_percentage, emoji = '0%', '🥶'
         price_point = 'Цена не изменилась'
-
+    volumes_penultimate, volume_avg = list(), 1  # Средний объём предпоследних 252 свечей
+    for candle in candles[:-1]:
+        volumes_penultimate.append(candle.volume)
+    volume_avg = sum(volumes_penultimate) / len(volumes_penultimate)
     # Формирование текста сообщения
     text = f'время: {time_last}\n' \
            f'📉 <code>{figi[1]}</code> {price_percentage} {emoji}\n' \
@@ -54,9 +53,5 @@ async def message_huge_volume(figi, candles, users, actual_shares):
            f'{price_point} ({price_percentage})\n' \
            f'Текущая цена: {price_last} ₽\n' \
            f'Объём: {volume_last} '
-    print(f'+{now() - candles[-1:][0].time - timedelta(minutes=1) - timedelta(seconds=15)} сек.'
-          f'{text}')
 
-    # Отправляем сообщения в телеграм если объём последней свечи больше в 1,5 раза среднего объёма предпоследних свечей
-    if volume_last >= 1.5*volume_avg:
-        await one_message(users, actual_shares, text)
+    return text
