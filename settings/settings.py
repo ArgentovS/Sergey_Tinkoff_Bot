@@ -54,23 +54,6 @@ def config_update():
         config.write(file)
     config.read(file)  # обновляем конфигурацию
 
-import logging
-logging.basicConfig(
-    level=logging.INFO,
-    filename='data/logs.log',
-    format="%(asctime)s - %(module)s\n[%(levelname)s] %(funcName)s:\n %(lineno)d - %(message)s",
-    datefmt='%H:%M:%S',
-    encoding="utf-8"
-)
 
 if __name__ == "__main__":
     pass
-    # try:
-    #     print(config['Telegram']['api'])
-    # except:
-    #     print('не записался')
-    #
-    # print(config.sections())
-    # print(config.items('Telegram'))
-    # #config['Telegram']['username'] = 'кто-то'
-    # # config_update()

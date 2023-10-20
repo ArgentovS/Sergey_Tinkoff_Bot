@@ -22,22 +22,22 @@ class ActualInstruments:
         self.shedulers = self.__all_params[1]  # Словарь секций акций Мосбиржи с расписаниями торгов на несколько дней
 
         # Формируем сообщение о расписании торгов на сегодня или на ближайший торговый день (ЕГО НАДО ПЕРЕДАТЬ В БОТ!)
-        self.message_shedulers = 'Расписание торгов на сегодня:\n'
+        self.message_shedulers = '<b>Расписание торгов на сегодня</b>'
         for __exchange in self.shedulers.keys():
             if self.shedulers[__exchange][0].is_trading_day:  # Если текущая дата - дата торгов на Мосбирже
                 self.is_trading = True
-                self.message_shedulers += (f'\n |  {__exchange}:\n'
+                self.message_shedulers += (f'\n <u>{__exchange}:</u>\n'
                                            f'    c {utc3(self.shedulers[__exchange][0].start_time).strftime("%H-%M")}'
                                            f' до {utc3(self.shedulers[__exchange][0].end_time).strftime("%H-%M")}\n'
                                            f'    ({len(self.exchanges[__exchange])} акций)')
         if not self.is_trading:
             for day in range(len(self.shedulers[__exchange])-1, 0, -1):
                 self.message_shedulers = (f'Сегодня торгов нет\n'
-                                          f'Расписание торгов на {self.shedulers[__exchange][day].date.strftime("%y-%m-%d")}:\n')
+                                          f'\n<b>Расписание торгов на {self.shedulers[__exchange][day].date.strftime("%y-%m-%d")}</b>')
                 for __exchange in self.shedulers.keys():
                     if self.shedulers[__exchange][day].is_trading_day:
                         self.trading_day = self.shedulers[__exchange][day].date.strftime('%y-%m-%d')
-                        self.message_shedulers += (f'\n |  {__exchange}:\n'
+                        self.message_shedulers += (f'\n <u>{__exchange}:</u>\n'
                                                    f'    c {utc3(self.shedulers[__exchange][day].start_time).strftime("%H-%M")}'
                                                    f' до {utc3(self.shedulers[__exchange][day].end_time).strftime("%H-%M")}\n'
                                                    f'    ({len(self.exchanges[__exchange])} акций)')

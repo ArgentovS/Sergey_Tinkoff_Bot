@@ -6,33 +6,29 @@ from handlers import *
 INVEST_TOKEN = config['Tinkoff']['api']
 
 
-# Сопрограмма определения расписаний секций Мосбиржи, на которых торгуются акции
-@timeit
-async def get_schedules():
+# Сопрограмма запроса через ТинькоффАПИ расписаний, секций и акций, торгуемых на Мосбирже
+async def async_get_schedules():
     async with AsyncClient(INVEST_TOKEN) as client:
-        calendars = await client.instruments.trading_schedules(from_=now(), to=now())  # Расписания секций текущего дня
-        shares_exchanges = await get_exchange_figi_shares()  # Секции со списком акций, торгующиеся на Мосбирже через Тинькофф в текущий день
+        # Запросим параметры акций, которые торгуются на Мосбирже
+        shares = await client.instruments.shares()
+        morx_exchanges = dict()  # Множество секций Мосбиржи, на котрой торгуются акции
 
-        shares_schedules = {}  # Расписания секций Мосбиржи
-        schedules_message = '\n            Расписание по секциям:   '
-        is_trading = False  # Признак наличия расписания в текущий день хотя бы для одной секции торгуемых акций
-        for calendar in calendars.exchanges:
-            if calendar.exchange in shares_exchanges[0].keys():  # Собираем расписания секций акций Мосбиржи в текущий день
-                if calendar.exchange not in list(shares_schedules.keys()):
-                    shares_schedules[calendar.exchange] = calendar.days[0]
-                    if calendar.days[0].is_trading_day:
-                        schedules_message += f' {calendar.exchange}'\
-                                f' c {(calendar.days[0].start_time+timedelta(hours=3, minutes=0)).strftime("%H:%M")}'\
-                                f' до {(calendar.days[0].end_time+timedelta(hours=3, minutes=0)).strftime("%H:%M")}  | '
-                        is_trading = True
-                    else:
-                        schedules_message += f' {calendar.exchange} сегодня нет торгов  | '
+        for share in shares.instruments:
+            if share.real_exchange == 1:  # Признак торговли акцией на Мосбирже
+                if share.exchange in morx_exchanges.keys():
+                    morx_exchanges[share.exchange].append(share)
+                else:
+                    morx_exchanges[share.exchange] = [share]
 
-        # Логирование сборки расписаний
-        logger.info(schedules_message)
+        # Запросим параметры расписаний секций Мосбиржи, на которых торгуются акции
+        schedules = await client.instruments.trading_schedules(from_=now())
+        moex_schedules = dict()  # Словарь расписаний секций акций Мосбиржи на несколько дней вперёд
 
-        # Формируем список задач для асинхронных запросов свечей по акциям
-        return shares_schedules, shares_exchanges, is_trading
+        for exchange in schedules.exchanges:
+            if exchange.exchange in morx_exchanges:
+                moex_schedules[exchange.exchange] = exchange.days  # Заполняется данным в формате Тинькофф-АПИ days
+
+    return morx_exchanges, moex_schedules
 
 
 # Сопрограмма запуска списка задач для асинхронных запросов акций, торгуемых в текущий момент на Мосбирже
@@ -46,53 +42,16 @@ async def create_requests_candles(users, actual_shares, figis):
 
 # Сопрограмма запросов свечей
 async def get_last_candle(users, actual_shares, figi=None):
+    candles = list()  # список полученных свечей
     async with AsyncClient(INVEST_TOKEN) as client:
-            volume_count = 0
-            volume_sum = 0
-            async for candle in client.get_all_candles(
-                    figi=figi[0],
-                    from_=now()-timedelta(minutes=252),
-                    to=now(),
-                    interval=CandleInterval.CANDLE_INTERVAL_1_MIN,
-                                                            ):
+            async for candle in client.get_all_candles(figi=figi[0], from_=now()-timedelta(minutes=252),
+                                                       to=now(), interval=CandleInterval.CANDLE_INTERVAL_1_MIN):
                 try:
-                    volume = candle.volume
-                    volume_count += 1
-                    volume_sum += volume
-                    time_c = utc3(candle.time)
-                    now_time = utc3(now())
-                    if volume_sum:
-                        volume_average = volume_sum / volume_count
-                        # candle_time, volume, is_complete = candle.time, candle.volume, candle.is_complete
-                        # print(time_c, figi, now_time,
-                        #       f'время подсчёта: +{now_time-time_c-timedelta(minutes=1)-timedelta(seconds=15)} сек.')
-                        # # await set_collect_1_min_candels(candle_time,
-                        # #                                 figi,
-                        #                                 volume,
-                        #                                 is_complete,
-                        #                                 now_time)
-                except Exception as E:
+                    candles.append(candle)
+                except BaseException as E:
+                    logger.debug(f'Ошибка выполнения запроса к Тинькофф АПИ {E}')
                     pass
-                        #logger.debug(f'Ошибка выполнения запроса {E}')
-                    print(f'Ошибка {E}')
-                        # print('1970-01-01 00:00:00+00:00', figi, 0, False, now_time)
-                        # await set_collect_1_min_candels('1970-01-01 00:00:00+00:00',
-                        #                                 figi,
-                        #                                 0,
-                        #                                 False,
-                        #                                 now_time)
-            if volume_sum and volume_average*1.5 < volume:
-                #logger.info(f'{figi}, Среднее: {volume_average}, Свеча: {volume} время свечи: {time}')
-                text = f'Время: {time_c.strftime("%H:%M")} |  Акция: `{figi[1]}` |\n'\
-                           f'Средний объём на {volume_count} свечах: {round(volume_average)} |\n'\
-                           f'Объём последней свечи: {volume} '\
-                           f'(+{round(((volume-volume_average)/volume_average)*100)}%)'
-                print(f'+{now_time-time_c-timedelta(minutes=1)-timedelta(seconds=15)} сек.'
-                      f'{text}')
-                await one_message(users, actual_shares, text)
-
-
-
+            await message_huge_volume(figi, candles, users, actual_shares)  # Формируем сообщение в телеграм
 
 
 # Сопрограмма запроса через ТинькоффАПИ данных об аккаунте пользователя
@@ -126,28 +85,30 @@ async def get_exchange_figi_shares():
         return shares_exchanges, mos_exchange_message
 
 
-# Сопрограмма запроса через ТинькоффАПИ расписаний, секций и акций, торгуемых на Мосбирже
-async def async_get_schedules():
+# Сопрограмма определения расписаний секций Мосбиржи, на которых торгуются акции
+@timeit
+async def get_schedules():
     async with AsyncClient(INVEST_TOKEN) as client:
-        # Запросим параметры акций, которые торгуются на Мосбирже
-        shares = await client.instruments.shares()
-        morx_exchanges = dict()  # Множество секций Мосбиржи, на котрой торгуются акции
+        calendars = await client.instruments.trading_schedules(from_=now(), to=now())  # Расписания секций текущего дня
+        shares_exchanges = await get_exchange_figi_shares()  # Секции со списком акций, торгующиеся на Мосбирже через Тинькофф в текущий день
 
-        for share in shares.instruments:
-            if share.real_exchange == 1:  # Признак торговли акцией на Мосбирже
-                if share.exchange in morx_exchanges.keys():
-                    morx_exchanges[share.exchange].append(share)
-                else:
-                    morx_exchanges[share.exchange] = [share]
+        shares_schedules = {}  # Расписания секций Мосбиржи
+        schedules_message = '\n            Расписание по секциям:   '
+        is_trading = False  # Признак наличия расписания в текущий день хотя бы для одной секции торгуемых акций
+        for calendar in calendars.exchanges:
+            if calendar.exchange in shares_exchanges[0].keys():  # Собираем расписания секций акций Мосбиржи в текущий день
+                if calendar.exchange not in list(shares_schedules.keys()):
+                    shares_schedules[calendar.exchange] = calendar.days[0]
+                    if calendar.days[0].is_trading_day:
+                        schedules_message += f' **{calendar.exchange}**'\
+                                f' c {(calendar.days[0].start_time+timedelta(hours=3, minutes=0)).strftime("%H:%M")}'\
+                                f' до {(calendar.days[0].end_time+timedelta(hours=3, minutes=0)).strftime("%H:%M")}  | '
+                        is_trading = True
+                    else:
+                        schedules_message += f' {calendar.exchange} сегодня нет торгов  | '
 
-        # Запросим параметры расписаний секций Мосбиржи, на которых торгуются акции
-        schedules = await client.instruments.trading_schedules(from_=now())
-        moex_schedules = dict()  # Словарь расписаний секций акций Мосбиржи на несколько дней вперёд
+        # Логирование сборки расписаний
+        logger.info(schedules_message)
 
-        for exchange in schedules.exchanges:
-            if exchange.exchange in morx_exchanges:
-                moex_schedules[exchange.exchange] = exchange.days  # Заполняется данным в формате Тинькофф-АПИ days
-
-    return morx_exchanges, moex_schedules
-
-
+        # Формируем список задач для асинхронных запросов свечей по акциям
+        return shares_schedules, shares_exchanges, is_trading
