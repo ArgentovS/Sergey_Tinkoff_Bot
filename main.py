@@ -49,13 +49,10 @@ async def start_bot(actual_shares):
     bot = Bot(token=config['Telegram']['api'], parse_mode=ParseMode.HTML)  # создаём экземпляр бота
     dp = Dispatcher(bot=bot, storage=MemoryStorage())  # создаём экземпляр диспетчера
     dp.include_routers(com_rout)  # подключаем роутер к диспетчеру
-    logger.debug(f'\n            Роутер  бота включен')
     bot.actual_shares = actual_shares  # создаём ссылку на класс с расписанием внутри бота
-    logger.debug(f'\n            Бот бот добавили класс')
     bot.actual_shares.bot = bot  # Создаём ссылку на бот внутри класса
-    logger.debug(f'\n            В класс добавил бот')
     await bot.delete_webhook(drop_pending_updates=True)  # игнорируем ранее поданные боту запросы
-    logger.debug(f'\n            В боте удалены webhook')
+    logger.debug(f'\n            Бот запущен')
     await dp.start_polling(bot)  # запускаем асинхронного бота
     logger.error(f'\n            Бот остановлен')
 
@@ -68,7 +65,8 @@ async def monitoring_exchange(actual_shares):
     :return: NoReturn
     """
     while True:
-        time_test_night, time_test_morning = '17', '17'  # время актуализации расписания и выдачи утреннего сообщения
+        time_test_night, time_test_morning = '23', '23'  # время актуализации расписания и выдачи утреннего сообщения
+
         # Формируем перечень пользователей, которым направляется сообщение
         users = [389726986]  # 6251198210]  #, 228248763, 2022125420]
 
@@ -87,11 +85,6 @@ async def monitoring_exchange(actual_shares):
 
 # Запускаем бота и опрос рынка в асинхронном режиме
 async def main(actual_shares):
-    """
-    Сопрограмма конфигурации асинхронных задач
-    :param actual_shares: экземпляр класса актуального расписания и параметров акций Мосбиржи.
-    :return: NoReturn
-    """
     # Конфигурация и запуск бота
     task2 = asyncio.create_task(start_bot(actual_shares))
     # Мониторинг расписаний Мосбиржи и формирование базы
@@ -102,13 +95,10 @@ async def main(actual_shares):
 
 # Запускаем программу
 if __name__ == '__main__':
-
     # Создаём журналы логирования
     logger.add(LOG_SCHEDULE_PATH, rotation="1 MB", enqueue=True)
-
     # Создаём экземпляр расписания
     actual_shares = ActualInstruments()  # Создан в основном теле, чтобы иметь возможность передавать в любое место
-
     # Запускаем асинхронные задачи (бот, мониторинг расписания рынка)
     asyncio.run(main(actual_shares))
 

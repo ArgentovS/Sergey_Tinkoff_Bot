@@ -1,3 +1,17 @@
+''''''
+'''
+Application development
+'''
+import asyncio
+from loguru import logger
+import configparser
+import time
+from datetime import timedelta
+import pandas as pd
+import openpyxl
+from functools import wraps
+
+
 '''
 Bot development
 '''
@@ -25,22 +39,6 @@ from tinkoff.invest.retrying.aio.client import AsyncRetryingClient
 from tinkoff.invest.retrying.settings import RetryClientSettings
 from tinkoff.invest.utils import now
 
-
-'''
-Logging development
-'''
-from loguru import logger
-
-'''
-Other libs
-'''
-import configparser
-import asyncio
-import time
-from datetime import timedelta
-import pandas as pd
-import openpyxl
-from functools import wraps
 
 SQLITE_PATH = ('dbfile/operational.db')
 LOG_SCHEDULE_PATH = 'data/logfile/schedule.log'
