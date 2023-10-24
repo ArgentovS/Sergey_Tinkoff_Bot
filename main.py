@@ -53,7 +53,7 @@ async def start_bot(actual_shares):
     bot.actual_shares.bot = bot  # Создаём ссылку на бот внутри класса
     await bot.delete_webhook(drop_pending_updates=True)  # игнорируем ранее поданные боту запросы
     logger.debug(f'\n            Бот запущен')
-    await dp.start_polling(bot)  # запускаем асинхронного бота
+    await dp.start_polling(bot, polling_timeout=45)  # запускаем асинхронного бота
     logger.error(f'\n            Бот остановлен')
 
 
@@ -65,7 +65,7 @@ async def monitoring_exchange(actual_shares):
     :return: NoReturn
     """
     while True:
-        time_test_night, time_test_morning = '23', '23'  # время актуализации расписания и выдачи утреннего сообщения
+        time_test_night, time_test_morning = '18', '18'  # время актуализации расписания и выдачи утреннего сообщения
 
         # Формируем перечень пользователей, которым направляется сообщение
         users = [389726986]  # 6251198210]  #, 228248763, 2022125420]
@@ -75,7 +75,6 @@ async def monitoring_exchange(actual_shares):
             await actual_shares.fit()  # Заполняем расписание на последующие дни (в 03:06 ночи каждого дня)
         # Направляем пользователям в чат утреннее сообщение о расписании
         if utc3(now()).strftime('%H') == time_test_morning:
-            await one_message(users, actual_shares, actual_shares.message_shedulers)
             while actual_shares.is_trading:
                 # Запускаем опрос параметров рынка внутри торгового дня
                 await start_market_survey(actual_shares, users)

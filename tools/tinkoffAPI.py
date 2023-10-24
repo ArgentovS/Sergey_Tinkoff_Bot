@@ -58,9 +58,10 @@ async def get_last_candle(users, actual_shares, figi=None):
         for candle in candles[:-1]:
             volumes_penultimate.append(candle.volume)
         volume_avg = sum(volumes_penultimate) / len(volumes_penultimate)
-        if candle.volume >= EXCESS_VOLUME * volume_avg:
+        if candles[-1:][0].volume >= EXCESS_VOLUME * volume_avg and \
+                (now() - timedelta(minutes=1)).minute == candles[-1:][0].time.minute:
             text = message_huge_volume(figi, candles, users, actual_shares)  # Формируем сообщение в телеграм
-            print(f'+{now() - candles[-1:][0].time - timedelta(minutes=1) - timedelta(seconds=15)} сек.'
+            print(f'+{now() - candles[-1:][0].time - timedelta(minutes=1) - timedelta(seconds=15)} сек.\n'
                   f'{text}')
             # Отправляем сообщения в телеграм
             await one_message(users, actual_shares, text)

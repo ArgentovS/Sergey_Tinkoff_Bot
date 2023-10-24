@@ -1,5 +1,5 @@
 *.ini
-data/
+data/logfile/*.log
 .idea/
 */__pycache__/
 .ipynb_checkpoints/
