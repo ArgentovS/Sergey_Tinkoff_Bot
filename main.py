@@ -65,11 +65,11 @@ async def monitoring_exchange(actual_shares):
     :return: NoReturn
     """
     while True:
-        time_test_night, time_test_morning = '18', '18'  # время актуализации расписания и выдачи утреннего сообщения
+        time_test_night, time_test_morning = utc3(now()).strftime('%H'), utc3(now()).strftime('%H')  # время актуализации расписания и выдачи утреннего сообщения
 
         # Формируем перечень пользователей, которым направляется сообщение
         users = [389726986]  # 6251198210]  #, 228248763, 2022125420]
-
+        await  one_message(users, actual_shares, 'Проверка')
         # Проверяем время для запуска ежедневной актуализации расписания и параметров акций Мосбиржи
         if utc3(now()).strftime('%H') == time_test_night:
             await actual_shares.fit()  # Заполняем расписание на последующие дни (в 03:06 ночи каждого дня)
