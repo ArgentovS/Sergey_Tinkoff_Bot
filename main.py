@@ -38,19 +38,19 @@ async def start_market_survey(actual_shares):
 # Запускаем мониторинг времени и опрос рынка в определ>нное время
 async def monitoring_exchange(actual_shares):
     # Определение времении актуализации расписания и времени утреннего сообщения
-    time_test_night, time_test_morning = utc3(now()).strftime('%H'), utc3(now()).strftime('%H')
+    time_test_night = utc3(now()).strftime('%H')
     logger.info(f'\n            Мониторинг перезапущен')
     while True:
         if utc3(now()).strftime('%H') == time_test_night:
             await actual_shares.fit()  # Актуализируем расписания инструментов Мосбиржи в определённое время
             await asyncio.sleep(3)
-        if utc3(now()).strftime('%H') == time_test_morning and actual_shares.is_trading:
+        if utc3(now()).strftime('%H') == TIME_MORNING_MESSAGE and actual_shares.is_trading:
             await one_message(actual_shares, actual_shares.message_shedulers)  # Направляем утреннее сообщение
             await asyncio.sleep(3)
             logger.debug(f'\n            Зпапущен start_market_survey(actual_shares)')
             await start_market_survey(actual_shares)  # Запускаем опрос параметров рынка внутри торгового дня
         logger.info(f'\n            Проведён цикл мониторинга рынка')
-        await asyncio.sleep(59*60)
+        await asyncio.sleep(51*60)
 
 
 # Запускаем бота и опрос рынка в асинхронном режиме
