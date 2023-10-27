@@ -32,8 +32,8 @@ async def async_get_schedules():
 
 
 # Сопрограмма запуска списка задач для асинхронных запросов акций, торгуемых в текущий момент на Мосбирже
-async def create_requests_candles(users, actual_shares, figis):
-    tasks = [get_last_candle(users, actual_shares, figi) for figi in figis]
+async def create_requests_candles(actual_shares, figis):
+    tasks = [get_last_candle(actual_shares, figi) for figi in figis]
     loop = asyncio.get_event_loop()
     for task in tasks:
         loop.create_task(task)
@@ -41,7 +41,7 @@ async def create_requests_candles(users, actual_shares, figis):
 
 
 # Сопрограмма запросов свечей
-async def get_last_candle(users, actual_shares, figi=None):
+async def get_last_candle(actual_shares, figi=None):
     candles = list()  # список полученных свечей
     async with AsyncClient(INVEST_TOKEN) as client:
         async for candle in client.get_all_candles(figi=figi[0], from_=now()-timedelta(minutes=252),
@@ -53,21 +53,17 @@ async def get_last_candle(users, actual_shares, figi=None):
                 pass
 
         # Формируем текст сообщения если объём вырос на коэффициент
-        EXCESS_VOLUME = 1.5
         volumes_penultimate, volume_avg = list(), 1  # Средний объём предпоследних 252 свечей
         for candle in candles[:-1]:
             volumes_penultimate.append(candle.volume)
         volume_avg = sum(volumes_penultimate) / len(volumes_penultimate)
         if candles[-1:][0].volume >= EXCESS_VOLUME * volume_avg and \
                 (now() - timedelta(minutes=1)).minute == candles[-1:][0].time.minute:
-            text = message_huge_volume(figi, candles, users, actual_shares)  # Формируем сообщение в телеграм
+            text = message_huge_volume(figi, candles)  # Формируем сообщение в телеграм
             print(f'+{now() - candles[-1:][0].time - timedelta(minutes=1) - timedelta(seconds=15)} сек.\n'
                   f'{text}')
             # Отправляем сообщения в телеграм
-            await one_message(users, actual_shares, text)
-
-    # if volume_last >= 1.5 * volume_avg and int(candles[-1:][0].time.strftime("%M")) == int(
-    #         now().time.strftime("%M")) - 1:
+            await one_message(actual_shares, text)
 
 
 # Сопрограмма запроса через ТинькоффАПИ данных об аккаунте пользователя
