@@ -49,7 +49,10 @@ async def monitoring_exchange(actual_shares):
             await asyncio.sleep(3)
             logger.debug(f'\n            Зпапущен start_market_survey(actual_shares)')
             await start_market_survey(actual_shares)  # Запускаем опрос параметров рынка внутри торгового дня
-        logger.info(f'\n            Проведён цикл мониторинга рынка')
+        logger.info(f'\n            Проведён цикл мониторинга рынка.\n'
+                    f'              Признак торгового дня {actual_shares.is_trading}\n'
+                    f'              Опредлелённый час время {utc3(now()).strftime("%H")}\n'
+                    f'              Заданный час {TIME_MORNING_MESSAGE}')
         await asyncio.sleep(51*60)
 
 

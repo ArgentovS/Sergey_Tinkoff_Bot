@@ -44,13 +44,13 @@ async def create_requests_candles(actual_shares, figis):
 async def get_last_candle(actual_shares, figi=None):
     candles = list()  # список полученных свечей
     async with AsyncClient(INVEST_TOKEN) as client:
-        async for candle in client.get_all_candles(figi=figi[0], from_=now()-timedelta(minutes=252),
+        try:
+            async for candle in client.get_all_candles(figi=figi[0], from_=now()-timedelta(minutes=252),
                                                    to=now(), interval=CandleInterval.CANDLE_INTERVAL_1_MIN):
-            try:
                 candles.append(candle)
-            except BaseException as E:
-                logger.debug(f'Ошибка выполнения запроса к Тинькофф АПИ {E}')
-                pass
+        except BaseException as E:
+            logger.debug(f'Ошибка выполнения запроса к Тинькофф АПИ {E}')
+            pass
 
         # Формируем текст сообщения если объём вырос на коэффициент
         volumes_penultimate, volume_avg = list(), 1  # Средний объём предпоследних 252 свечей
