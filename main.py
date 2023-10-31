@@ -31,7 +31,12 @@ async def start_market_survey(actual_shares):
             await create_requests_candles(actual_shares, figis)  # Формируем асинхронные запросы по инструментам
             await asyncio.sleep(3)
         elif not len(figis):
-            actual_shares.is_trading = False
+            flag_end_time = True
+            for exchanxe in actual_shares.shedulers.keys():
+                if now() <= actual_shares.shedulers[exchanxe][0].end_time:
+                    flag_end_time = False
+            if flag_end_time:
+                actual_shares.is_trading = False
             logger.info(f'\n            Торги закончены на секциях')
 
 
