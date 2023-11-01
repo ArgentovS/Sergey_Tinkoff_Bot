@@ -26,18 +26,20 @@ async def start_market_survey(actual_shares):
                                   share.ticker,
                                   share.min_price_increment))  # Формируем список активных инструментов
         await asyncio.sleep(1)
+        flag_end_time = False
         delay_time = 15
         if len(figis) and now().second == delay_time:
             await create_requests_candles(actual_shares, figis)  # Формируем асинхронные запросы по инструментам
             await asyncio.sleep(3)
-        elif not len(figis):
-            flag_end_time = True
+        elif not len(figis) and now().second == delay_time:
             for exchanxe in actual_shares.shedulers.keys():
-                if now() <= actual_shares.shedulers[exchanxe][0].end_time:
-                    flag_end_time = False
+                if now() >= actual_shares.shedulers[exchanxe][0].end_time:
+                    flag_end_time = True
             if flag_end_time:
                 actual_shares.is_trading = False
-            logger.info(f'\n            Торги закончены на секциях')
+            logger.info(f'\n            Торги на секциях закончены')
+            logger.info(f'\n            {len(figis)}, флаг окончания дня: {flag_end_time}, '
+                        f'признак торгового дня: {actual_shares.is_trading}')
 
 
 # Запускаем мониторинг времени и опрос рынка в определ>нное время
@@ -52,7 +54,7 @@ async def monitoring_exchange(actual_shares):
         if utc3(now()).strftime('%H') == TIME_MORNING_MESSAGE and actual_shares.is_trading:
             await one_message(actual_shares, actual_shares.message_shedulers)  # Направляем утреннее сообщение
             await asyncio.sleep(3)
-            logger.debug(f'\n            Зпапущен start_market_survey(actual_shares)')
+            logger.debug(f'\n            Зпапущен цикл мониторинга рынка start_market_survey(actual_shares)')
             await start_market_survey(actual_shares)  # Запускаем опрос параметров рынка внутри торгового дня
         logger.info(f'\n            Проведён цикл мониторинга рынка.\n'
                     f'              Признак торгового дня {actual_shares.is_trading}\n'

@@ -1,6 +1,7 @@
 from settings import *
 from tools.utils import *
 from tools.db import *
+from tools.calculation import *
 from handlers import *
 
 INVEST_TOKEN = config['Tinkoff']['api']
@@ -33,14 +34,14 @@ async def async_get_schedules():
 
 # Сопрограмма запуска списка задач для асинхронных запросов акций, торгуемых в текущий момент на Мосбирже
 async def create_requests_candles(actual_shares, figis):
-    tasks = [get_last_candle(actual_shares, figi) for figi in figis]
+    tasks = [get_last_candles_50for5_5for1(actual_shares, figi) for figi in figis]
     loop = asyncio.get_event_loop()
     for task in tasks:
         loop.create_task(task)
     logger.info(f'\n            Запущено {len(tasks)} асинхронных задач для запросов свечей')
 
 
-# Сопрограмма запросов свечей
+# Сопрограмма запросов 252 свечей по 1 минуте
 async def get_last_candle(actual_shares, figi=None):
     candles = list()  # список полученных свечей
     async with AsyncClient(INVEST_TOKEN) as client:
@@ -59,11 +60,57 @@ async def get_last_candle(actual_shares, figi=None):
         volume_avg = sum(volumes_penultimate) / len(volumes_penultimate)
         if candles[-1:][0].volume >= EXCESS_VOLUME * volume_avg and \
                 (now() - timedelta(minutes=1)).minute == candles[-1:][0].time.minute:
-            text = message_huge_volume(figi, candles)  # Формируем сообщение в телеграм
+
+            volumes_penultimate, volume_avg = list(), 1  # Средний объём предпоследних 252 свечей
+            for candle in candles[:-1]:
+                volumes_penultimate.append(candle.volume)
+            volume_avg = sum(volumes_penultimate) / len(volumes_penultimate)
+
+            text = message_huge_volume(figi, candles, volume_avg)  # Формируем сообщение в телеграм
             print(f'+{now() - candles[-1:][0].time - timedelta(minutes=1) - timedelta(seconds=15)} сек.\n'
                   f'{text}')
             # Отправляем сообщения в телеграм
             await one_message(actual_shares, text)
+
+
+# Сопрограмма запросов 50 свечей по 5 минут и 5 свечей по 1 минуте
+async def get_last_candles_50for5_5for1(actual_shares, figi=None):
+    candles_5_min = list()  # список 5 минутных свечей за 15 дней
+    candles_1_min = list()  # список 1 минутных текущих свечей
+    async with AsyncClient(INVEST_TOKEN) as client:
+        try:
+            async for candle in client.get_all_candles(figi=figi[0], from_=now() - timedelta(minutes=5),
+                                                       to=now(), interval=CandleInterval.CANDLE_INTERVAL_1_MIN):
+                candles_1_min.append(candle)
+        except BaseException as E:
+            logger.debug(f'Ошибка получения 1 минутных свечей для {figi[0]}\n{E}\n'
+                         f' Длинна 1-минутного списка {len(candles_1_min)}')
+            pass
+
+        if candles_1_min:
+            # Запросим исторические 5-минутные свечи
+            try:
+                async for candle in client.get_all_candles(figi=figi[0], from_=now() - timedelta(days=1),
+                                                           to=now(), interval=CandleInterval.CANDLE_INTERVAL_5_MIN):
+                    candles_5_min.append(candle)
+            except BaseException as E:
+                logger.debug(f'Ошибка получения 5 минутных свечей для {figi[0]}\n{E}\n'
+                             f' Длинна 5-минутного списка {len(candles_5_min)}')
+                pass
+            # Расчёт среднего значения свечи по 5 минуткам
+            avarage_volume_5_min = get_avarage_5_min(candles_5_min, figi[1])
+
+            # Расчёт накопленных 1 минутных свечей внутри текущей пятиминутки
+            candles_1_min = get_volumes_1_min(candles_1_min)
+
+            # Формируем текст сообщения если объём вырос на коэффициент
+            if candles_1_min.volume >= EXCESS_VOLUME * avarage_volume_5_min and \
+                    (now() - timedelta(minutes=1)).minute == candles_1_min.time.minute:
+                text = message_huge_volume(figi, [candles_1_min], avarage_volume_5_min)  # Формируем сообщение в телеграм
+                print(f'+{now() - candles_1_min.time - timedelta(minutes=1) - timedelta(seconds=15)} сек.\n'
+                      f'{text}')
+                # Отправляем сообщения в телеграм
+                await one_message(actual_shares, text)
 
 
 # Сопрограмма запроса через ТинькоффАПИ данных об аккаунте пользователя

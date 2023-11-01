@@ -16,14 +16,14 @@ async def one_message(actual_shares, text):
 
 
 # Функция формирования текста сообщения при резком росте объёма
-def message_huge_volume(figi, candles):
+def message_huge_volume(figi, candles, volume_avg):
 
     # Расчёт статических параметров сообщения
     time_last = utc3(candles[-1:][0].time).strftime("%H:%M")                 # время последней свечи
 
-    price_penultimate = round(candles[-2:-1][0].close.units +          # Цена последней свечи
-                              candles[-2:-1][0].close.nano * 1e-9, 2)
-    price_last = round(candles[-1:][0].close.units +                   # Цена предпоследней свечи
+    price_penultimate = round(candles[-1:][0].open.units +          # Цена предпоследней свечи
+                              candles[-1:][0].open.nano * 1e-9, 2)
+    price_last = round(candles[-1:][0].close.units +                   # Цена последней свечи
                        candles[-1:][0].close.nano * 1e-9, 2)
 
     volume_last = candles[-1:][0].volume                               # Объём последней свечи
@@ -43,10 +43,7 @@ def message_huge_volume(figi, candles):
         emoji_1 = '🌫'
         price_percentage, emoji_2 = '0%', '🥶'
         price_point = 'Цена не изменилась'
-    volumes_penultimate, volume_avg = list(), 1  # Средний объём предпоследних 252 свечей
-    for candle in candles[:-1]:
-        volumes_penultimate.append(candle.volume)
-    volume_avg = sum(volumes_penultimate) / len(volumes_penultimate)
+
     # Формирование текста сообщения
     text = f'время: {time_last}\n' \
            f'{emoji_1} <code>{figi[1]}</code> {price_percentage} {emoji_2}\n' \

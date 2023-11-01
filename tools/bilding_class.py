@@ -1,5 +1,7 @@
 from settings import *
 from tools.tinkoffAPI import *
+from tools.utils import *
+from datetime import datetime
 
 
 class ActualInstruments:

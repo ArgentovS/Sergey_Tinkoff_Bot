@@ -43,7 +43,7 @@ from tinkoff.invest.utils import now
 SQLITE_PATH = ('dbfile/operational.db')  # Путь к базе sqlite
 LOG_SCHEDULE_PATH = 'data/logfile/schedule.log'  # Путь к логфайлам
 
-EXCESS_VOLUME = 4.5  # Коэффициент превышения объёма над среднем для отправки данных в бот
+EXCESS_VOLUME = 1.5  # Коэффициент превышения объёма над среднем для отправки данных в бот
 USERS = [389726986]  # 6251198210]  #, 228248763, 2022125420]  # Список пользователей чата
 
 TIME_MORNING_MESSAGE = (now() + timedelta(hours=3)).strftime('%H')  # Время отправки пользователям утреннего сообщения
