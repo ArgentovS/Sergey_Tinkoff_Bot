@@ -34,7 +34,13 @@ async def async_get_schedules():
 
 # Сопрограмма запуска списка задач для асинхронных запросов акций, торгуемых в текущий момент на Мосбирже
 async def create_requests_candles(actual_shares, figis):
-    tasks = [get_last_candles_50for5_5for1(actual_shares, figi) for figi in figis]
+    # Задаём пользовательское ограничение на список наблюдаемых инструментов
+    user_figis = ['AFKS', 'AFLT', 'AGRO', 'ALRS', 'CHMF', 'GAZP', 'GTRK', 'IRAO', 'HNFG', 'LKOH', 'MAGN',
+                  'MGNT', 'MOEX', 'MTLR', 'MTLRP', 'NLMK', 'NMTP', 'NVTK', 'OGKB', 'PLZL', 'RASP', 'ROLO',
+                  'ROSN', 'RTKM', 'RUAL', 'SBER', 'SIBN', 'SNGSP', 'TATN', 'TRMK', 'VTBR', 'YNDX']
+    _figis = [elem for elem in figis if elem[1] in user_figis]
+    # Асинхронно формируем запросы к ТинькоффАПИ и сообщения в бот
+    tasks = [get_last_candles_50for5_5for1(actual_shares, figi) for figi in _figis]
     loop = asyncio.get_event_loop()
     for task in tasks:
         loop.create_task(task)
