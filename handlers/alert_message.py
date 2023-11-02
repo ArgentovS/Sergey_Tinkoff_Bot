@@ -45,11 +45,10 @@ def message_huge_volume(figi, candles, volume_avg):
         price_point = 'Цена не изменилась'
 
     # Формирование текста сообщения
-    text = f'время: {time_last}\n' \
-           f'{emoji_1} <code>{figi[1]}</code> {price_percentage} {emoji_2}\n' \
+    text = f'{emoji_1} <code>{figi[1]}</code> {price_percentage} {emoji_2}\n' \
            f'Рост объёма на {round(((volume_last - volume_avg) / volume_avg) * 100)}%\n' \
            f'{price_point} ({price_percentage})\n' \
            f'Текущая цена: {price_last} ₽\n' \
-           f'Объём: {volume_last} '
-
+           f'Объём: {volume_last}\n' \
+           f'время: {time_last}'
     return text

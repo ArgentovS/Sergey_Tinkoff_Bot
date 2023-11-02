@@ -37,7 +37,7 @@ async def create_requests_candles(actual_shares, figis):
     # Задаём пользовательское ограничение на список наблюдаемых инструментов
     user_figis = ['AFKS', 'AFLT', 'AGRO', 'ALRS', 'CHMF', 'GAZP', 'GTRK', 'IRAO', 'HNFG', 'LKOH', 'MAGN',
                   'MGNT', 'MOEX', 'MTLR', 'MTLRP', 'NLMK', 'NMTP', 'NVTK', 'OGKB', 'PLZL', 'RASP', 'ROLO',
-                  'ROSN', 'RTKM', 'RUAL', 'SBER', 'SIBN', 'SNGSP', 'TATN', 'TRMK', 'VTBR', 'YNDX']
+                  'ROSN', 'RTKM', 'RUAL', 'SBER', 'SIBN', 'SNGSP', 'TATN', 'TRMK', 'TRNFP', 'VTBR', 'YNDX']
     _figis = [elem for elem in figis if elem[1] in user_figis]
     # Асинхронно формируем запросы к ТинькоффАПИ и сообщения в бот
     tasks = [get_last_candles_50for5_5for1(actual_shares, figi) for figi in _figis]
