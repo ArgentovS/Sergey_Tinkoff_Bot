@@ -23,13 +23,15 @@ def message_huge_volume(figi, candles, volume_avg):
 
     min_price_increment = figi[2].units + figi[2].nano * 1e-9         # Минимальный шаг цены
     price_penultimate = round(candles[-1:][0].open.units +            # Цена предпоследней свечи
-                              candles[-1:][0].open.nano * 1e-9, len(str(min_price_increment)[2:]))
+                              candles[-1:][0].open.nano * 1e-9, len(str(1 + min_price_increment % 1)[2:]))
     price_last = round(candles[-1:][0].close.units +                  # Цена последней свечи
-                       candles[-1:][0].close.nano * 1e-9, len(str(min_price_increment)[2:]))
-    logger.debug(f'min_p: {min_price_increment}  | len: {len(str(min_price_increment)[2:])}  |  last_p: {price_last}  |  penul_p: {price_penultimate}')
+                       candles[-1:][0].close.nano * 1e-9, len(str(1 + min_price_increment % 1)[2:]))
 
     volume_last = candles[-1:][0].volume                              # Объём последней свечи
 
+    logger.debug(f'Тикер: {figi[1]}  |  разряд: {min_price_increment}'
+                 f'  |  окр: {len(str(1 + min_price_increment % 1)[2:])}'
+                 f'  |  lsat_p: {price_last}  |  penul_p {price_penultimate}')
 
     # Расчёт динамических параметров сообщения
     if price_penultimate < price_last:
