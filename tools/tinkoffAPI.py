@@ -111,6 +111,7 @@ async def get_last_candles_50for5_5for1(actual_shares, figi=None):
 
             # Формируем текст сообщения если объём вырос на коэффициент
             if candles_1_min.volume >= EXCESS_VOLUME * avarage_volume_5_min and \
+               candles_1_min.previous_volume < EXCESS_VOLUME * avarage_volume_5_min and \
                     (now() - timedelta(minutes=1)).minute == candles_1_min.time.minute:
                 text = message_huge_volume(figi, [candles_1_min], avarage_volume_5_min)  # Формируем сообщение в телеграм
                 print(f'+{now() - candles_1_min.time - timedelta(minutes=1) - timedelta(seconds=15)} сек.\n'

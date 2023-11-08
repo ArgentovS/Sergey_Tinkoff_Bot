@@ -19,26 +19,29 @@ async def one_message(actual_shares, text):
 def message_huge_volume(figi, candles, volume_avg):
 
     # Расчёт статических параметров сообщения
-    time_last = utc3(candles[-1:][0].time).strftime("%H:%M")                 # время последней свечи
+    time_last = utc3(candles[-1:][0].time).strftime("%H:%M")          # время последней свечи
 
-    price_penultimate = round(candles[-1:][0].open.units +          # Цена предпоследней свечи
-                              candles[-1:][0].open.nano * 1e-9, 2)
-    price_last = round(candles[-1:][0].close.units +                   # Цена последней свечи
-                       candles[-1:][0].close.nano * 1e-9, 2)
+    min_price_increment = figi[2].units + figi[2].nano * 1e-9         # Минимальный шаг цены
+    price_penultimate = round(candles[-1:][0].open.units +            # Цена предпоследней свечи
+                              candles[-1:][0].open.nano * 1e-9, len(str(min_price_increment)[2:]))
+    price_last = round(candles[-1:][0].close.units +                  # Цена последней свечи
+                       candles[-1:][0].close.nano * 1e-9, len(str(min_price_increment)[2:]))
+    logger.debug(f'min_p: {min_price_increment}  | len: {len(str(min_price_increment)[2:])}  |  last_p: {price_last}  |  penul_p: {price_penultimate}')
 
-    volume_last = candles[-1:][0].volume                               # Объём последней свечи
+    volume_last = candles[-1:][0].volume                              # Объём последней свечи
+
 
     # Расчёт динамических параметров сообщения
     if price_penultimate < price_last:
         emoji_1 = '📈'
         price_percentage = f'+{round((price_last - price_penultimate) / price_penultimate * 100, 2)}%'
         emoji_2 = '🚀'
-        price_point = f'Рост на {round((price_last - price_penultimate)/(figi[2].units+figi[2].nano * 1e-9))}п'
+        price_point = f'Рост на {round((price_last - price_penultimate)/ min_price_increment)}п'
     elif price_penultimate > price_last:
         emoji_1 = '📉'
         price_percentage = f'{round((price_last - price_penultimate) / price_penultimate * 100, 2)}%'
         emoji_2 = '🧨'
-        price_point = f'Падение на {round((price_penultimate - price_last) / (figi[2].units + figi[2].nano * 1e-9))}п'
+        price_point = f'Падение на {round((price_penultimate - price_last) /  min_price_increment)}п'
     else:
         emoji_1 = '🌫'
         price_percentage, emoji_2 = '0%', '🥶'

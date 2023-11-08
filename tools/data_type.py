@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 @dataclass
-class Quotation():
+class Quotation:
     """
     Тип данных для хрананеия цен
     """
@@ -15,7 +15,7 @@ class Quotation():
 
 
 @dataclass
-class BotCandle():
+class BotCandle:
     """
     Класс для фиксации данных о свечах
     """
@@ -26,3 +26,5 @@ class BotCandle():
     volume: int
     time: datetime
     is_complete: bool
+    previous_volume: int
+

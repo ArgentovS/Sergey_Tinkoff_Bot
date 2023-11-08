@@ -21,7 +21,7 @@ def get_avarage_5_min(candles_5_min, ticker):
         return avg_volume(candles_5_min[:50])[0]
     elif len(candles_5_min) > 0:
         logger.info(f' Исторических 5-минутных свечей по тикеру {ticker}: только {len(candles_5_min)}')
-        return avg_volume(candles_5_min[:50])[0]
+        return avg_volume(candles_5_min)[0]
     else:
         logger.info(f' Исторических 5-минутных свечей по тикеру {ticker}: нет')
         return 0
@@ -36,8 +36,12 @@ def get_volumes_1_min(candles_1_min):
         candles_1_min[-1:][0].close,
         0,
         candles_1_min[-1:][0].time,
-        candles_1_min[-1:][0].is_complete
+        candles_1_min[-1:][0].is_complete,
+        0
     )
-    for elem in candles_1_min[-1-(int(candle.time.minute)%5):]:
+
+    minutes_1 = candles_1_min[-1-(int(candle.time.minute) % 5):]  # Список 1-минутных свечей тв 5-минутной
+    for elem in minutes_1:
+        candle.previous_volume = candle.volume  # Опрелелим предыдущий нарастающий объём
         candle.volume += elem.volume
     return candle
