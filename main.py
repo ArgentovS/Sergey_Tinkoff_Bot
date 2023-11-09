@@ -26,19 +26,27 @@ async def start_market_survey(actual_shares):
                                   share.ticker,
                                   share.min_price_increment))  # Формируем список активных инструментов
         await asyncio.sleep(1)
-        flag_end_time = False
+        flag_end_time = True
         delay_time = 15
         if len(figis) and now().second == delay_time:
             await create_requests_candles(actual_shares, figis)  # Формируем асинхронные запросы по инструментам
             await asyncio.sleep(3)
         elif not len(figis) and now().second == delay_time:
+            logger.debug(f'\n             Признак торгового дня до обновления расписания {actual_shares.is_trading}\n')
             for exchanxe in actual_shares.shedulers.keys():
-                if now() >= actual_shares.shedulers[exchanxe][0].end_time:
-                    flag_end_time = True
+                logger.debug(
+                    f'\n            Определённое время: {utc3(now().date())} {utc3(now().time())}.\n'
+                    f'\n            Биржа: {exchanxe}   Время окончания расписания: '
+                    f'{utc3(actual_shares.shedulers[exchanxe][0].end_time).date()} '
+                    f'{utc3(actual_shares.shedulers[exchanxe][0].end_time.time())}.\n')
+                if now() <= actual_shares.shedulers[exchanxe][0].end_time:
+                    flag_end_time = False
+            logger.debug(f'\n             Признак торгового дня до обновления расписания {actual_shares.is_trading}\n')
+
             if flag_end_time:
                 actual_shares.is_trading = False
             logger.info(f'\n            Торги на секциях закончены')
-            logger.info(f'\n            {len(figis)}, флаг окончания дня: {flag_end_time}, '
+            logger.info(f'\n            Массив инструментов: {len(figis)}, флаг окончания дня: {flag_end_time}, '
                         f'признак торгового дня: {actual_shares.is_trading}')
 
 
@@ -49,17 +57,25 @@ async def monitoring_exchange(actual_shares):
     logger.info(f'\n            Мониторинг перезапущен')
     while True:
         if utc3(now()).strftime('%H') == time_test_night:
+            logger.debug(f'\n            Время начала обновления расписания {utc3(now()).date()} {utc3(now()).time()}.\n'
+                         f'              Признак торгового дня до обновления расписания {actual_shares.is_trading}\n')
             await actual_shares.fit()  # Актуализируем расписания инструментов Мосбиржи в определённое время
+            logger.debug(f'\n            Время окончания обновления расписания {utc3(now()).date()} {utc3(now()).time()}.\n'
+                         f'              Признак торгового дня после обновления расписания {actual_shares.is_trading}\n')
             await asyncio.sleep(3)
+
         if utc3(now()).strftime('%H') == TIME_MORNING_MESSAGE and actual_shares.is_trading:
+            logger.debug(
+                f'\n            Время начала ежеминутного мониторинга {utc3(now()).date()} {utc3(now()).time()}.\n'
+                f'              Признак торгового дня до начала ежеминутного мониторинга {actual_shares.is_trading}\n')
             await one_message(actual_shares, actual_shares.message_shedulers)  # Направляем утреннее сообщение
             await asyncio.sleep(3)
             logger.debug(f'\n            Зпапущен цикл мониторинга рынка start_market_survey(actual_shares)')
             await start_market_survey(actual_shares)  # Запускаем опрос параметров рынка внутри торгового дня
         logger.info(f'\n            Проведён цикл мониторинга рынка.\n'
-                    f'              Признак торгового дня {actual_shares.is_trading}\n'
-                    f'              Опредлелённый час время {utc3(now()).strftime("%H")}\n'
-                    f'              Заданный час {TIME_MORNING_MESSAGE}')
+                    f'              Признак торгового дня после проведения ежеминутного мониторинга {actual_shares.is_trading}\n'
+                    f'              Опредлелённый час времени {utc3(now()).strftime("%H")}\n'
+                    f'              Заданный час для отправки утреннего сообщения {TIME_MORNING_MESSAGE}')
         await asyncio.sleep(51*60)
 
 
