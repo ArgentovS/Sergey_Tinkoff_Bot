@@ -17,59 +17,31 @@ async def start_bot(actual_shares):
 
 # Опрашиваем рынок и рассчитываем параметры изменения свечей
 async def start_market_survey(actual_shares):
-    while actual_shares.is_trading:
-        figis = []  # Список figi инсрументы, по которым направляются запросы
-        for exchanxe in actual_shares.shedulers.keys():
-            if actual_shares.shedulers[exchanxe][0].start_time <= now() <= actual_shares.shedulers[exchanxe][0].end_time:
-                for share in actual_shares.exchanges[exchanxe]:
-                    figis.append((share.figi,
-                                  share.ticker,
-                                  share.min_price_increment))  # Формируем список активных инструментов
-        await asyncio.sleep(1)
-        delay_time = 15
-        if len(figis) and now().second == delay_time:
-            await create_requests_candles(actual_shares, figis)  # Формируем асинхронные запросы по инструментам
-            await asyncio.sleep(3)
-        elif not len(figis) and now().second == delay_time:
-            logger.debug(f'\n             Признак торгового дня до обновления расписания {actual_shares.is_trading}\n')
-            flag_end_time = True  # Флаг окончания рабочего дня (используется только при отсутсвии свечей)
+    while what_time(actual_shares):
+        if now().second == 15:
+            figis = []  # Список figi инсрументы, по которым направляются запросы
             for exchanxe in actual_shares.shedulers.keys():
-                logger.debug(
-                    f'\n            Определённое время: {utc3(now()).date()} {utc3(now()).time()}.\n'
-                    f'\n            Биржа: {exchanxe}   Время окончания расписания: '
-                    f'{utc3(actual_shares.shedulers[exchanxe][0].end_time).date()} '
-                    f'{utc3(actual_shares.shedulers[exchanxe][0].end_time).time()}.\n')
-                if now() <= actual_shares.shedulers[exchanxe][0].end_time:
-                    flag_end_time = False
-            logger.debug(f'\n             Признак торгового дня до обновления расписания {actual_shares.is_trading}\n')
-
-            if flag_end_time:
-                actual_shares.is_trading = False
-            logger.info(f'\n            Торги на секциях закончены')
-            logger.info(f'\n            Массив инструментов: {len(figis)}, флаг окончания дня: {flag_end_time}, '
-                        f'признак торгового дня: {actual_shares.is_trading}')
+                if actual_shares.shedulers[exchanxe][0].start_time <= now() <= actual_shares.shedulers[exchanxe][0].end_time:
+                    for share in actual_shares.exchanges[exchanxe]:
+                        figis.append((share.figi,
+                                      share.ticker,
+                                      share.min_price_increment))  # Формируем список активных инструментов
+            if len(figis):
+                await create_requests_candles(actual_shares, figis)  # Формируем асинхронные запросы по инструментам
+            await asyncio.sleep(55)
 
 
 # Запускаем мониторинг времени и опрос рынка в определ>нное время
 async def monitoring_exchange(actual_shares):
     # Определение времении актуализации расписания и времени утреннего сообщения
-    time_test_night = utc3(now()).strftime('%H')
     logger.info(f'\n            Мониторинг перезапущен')
     while True:
-        if utc3(now()).strftime('%H') == time_test_night:
-            logger.debug(f'\n            Время начала обновления расписания {utc3(now()).date()} {utc3(now()).time()}.\n'
-                         f'              Признак торгового дня до обновления расписания {actual_shares.is_trading}\n')
-            await actual_shares.fit()  # Актуализируем расписания инструментов Мосбиржи в определённое время
-            logger.debug(f'\n            Время окончания обновления расписания {utc3(now()).date()} {utc3(now()).time()}.\n'
-                         f'              Признак торгового дня после обновления расписания {actual_shares.is_trading}\n')
-            await asyncio.sleep(3)
-
+        await actual_shares.fit()  # Актуализируем расписания инструментов Мосбиржи в определённое время
+        await asyncio.sleep(3)
         if utc3(now()).strftime('%H') == TIME_MORNING_MESSAGE and actual_shares.is_trading:
-            logger.debug(
-                f'\n            Время начала ежеминутного мониторинга {utc3(now()).date()} {utc3(now()).time()}.\n'
-                f'              Признак торгового дня до начала ежеминутного мониторинга {actual_shares.is_trading}\n')
             await one_message(actual_shares, actual_shares.message_shedulers)  # Направляем утреннее сообщение
             await asyncio.sleep(3)
+        if what_time(actual_shares):
             logger.debug(f'\n            Зпапущен цикл мониторинга рынка start_market_survey(actual_shares)')
             await start_market_survey(actual_shares)  # Запускаем опрос параметров рынка внутри торгового дня
         logger.info(f'\n            Проведён цикл мониторинга рынка.\n'

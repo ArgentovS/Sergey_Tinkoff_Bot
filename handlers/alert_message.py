@@ -29,10 +29,6 @@ def message_huge_volume(figi, candles, volume_avg):
 
     volume_last = candles[-1:][0].volume                              # Объём последней свечи
 
-    # logger.debug(f'Тикер: {figi[1]}  |  разряд: {min_price_increment}'
-    #              f'  |  окр: {len(str(1 + min_price_increment % 1)[2:])}'
-    #              f'  |  lsat_p: {price_last}  |  penul_p {price_penultimate}')
-
     # Расчёт динамических параметров сообщения
     if price_penultimate < price_last:
         emoji_1 = '📈'
