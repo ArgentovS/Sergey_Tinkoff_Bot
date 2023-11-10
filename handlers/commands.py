@@ -20,4 +20,10 @@ async def start_handler(msg: Message):
 
 @router.message()
 async def message_handler(msg: Message):
+    if msg.from_user.id == 389726986:
+        await msg.answer(f"Переменные бота:\n"
+                         #f"Словарь: {msg.bot.actual_shares.message_shedulers.kyes()}\n"
+                         f"Торговый день: {msg.bot.actual_shares.is_trading}\n"
+                         f"Ближайший торговый день: {msg.bot.actual_shares.trading_day}")
+                         #f"Биржи: {msg.bot.actual_shares.exchanges['MOEX'][0]}")
     await msg.answer(f"Твой ID: {msg.from_user.id}")

@@ -26,19 +26,19 @@ async def start_market_survey(actual_shares):
                                   share.ticker,
                                   share.min_price_increment))  # Формируем список активных инструментов
         await asyncio.sleep(1)
-        flag_end_time = True
         delay_time = 15
         if len(figis) and now().second == delay_time:
             await create_requests_candles(actual_shares, figis)  # Формируем асинхронные запросы по инструментам
             await asyncio.sleep(3)
         elif not len(figis) and now().second == delay_time:
             logger.debug(f'\n             Признак торгового дня до обновления расписания {actual_shares.is_trading}\n')
+            flag_end_time = True  # Флаг окончания рабочего дня (используется только при отсутсвии свечей)
             for exchanxe in actual_shares.shedulers.keys():
                 logger.debug(
-                    f'\n            Определённое время: {utc3(now().date())} {utc3(now().time())}.\n'
+                    f'\n            Определённое время: {utc3(now()).date()} {utc3(now()).time()}.\n'
                     f'\n            Биржа: {exchanxe}   Время окончания расписания: '
                     f'{utc3(actual_shares.shedulers[exchanxe][0].end_time).date()} '
-                    f'{utc3(actual_shares.shedulers[exchanxe][0].end_time.time())}.\n')
+                    f'{utc3(actual_shares.shedulers[exchanxe][0].end_time).time()}.\n')
                 if now() <= actual_shares.shedulers[exchanxe][0].end_time:
                     flag_end_time = False
             logger.debug(f'\n             Признак торгового дня до обновления расписания {actual_shares.is_trading}\n')
