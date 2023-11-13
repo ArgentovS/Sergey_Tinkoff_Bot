@@ -17,7 +17,7 @@ async def start_bot(actual_shares):
 
 # Опрашиваем рынок и рассчитываем параметры изменения свечей
 async def start_market_survey(actual_shares):
-    while what_time(actual_shares):
+    while what_time(actual_shares) or utc3(now()).strftime('%H') == TIME_MORNING_MESSAGE:
         if now().second == 15:
             figis = []  # Список figi инсрументы, по которым направляются запросы
             for exchanxe in actual_shares.shedulers.keys():
@@ -28,7 +28,7 @@ async def start_market_survey(actual_shares):
                                       share.min_price_increment))  # Формируем список активных инструментов
             if len(figis):
                 await create_requests_candles(actual_shares, figis)  # Формируем асинхронные запросы по инструментам
-            await asyncio.sleep(55)
+            await asyncio.sleep(57)
 
 
 # Запускаем мониторинг времени и опрос рынка в определ>нное время
@@ -38,10 +38,10 @@ async def monitoring_exchange(actual_shares):
     while True:
         await actual_shares.fit()  # Актуализируем расписания инструментов Мосбиржи в определённое время
         await asyncio.sleep(3)
-        if utc3(now()).strftime('%H') == TIME_MORNING_MESSAGE and actual_shares.is_trading:
+        if ((utc3(now()).strftime('%H') == TIME_MORNING_MESSAGE and actual_shares.is_trading)
+                or what_time(actual_shares)):
             await one_message(actual_shares, actual_shares.message_shedulers)  # Направляем утреннее сообщение
             await asyncio.sleep(3)
-        if what_time(actual_shares):
             logger.debug(f'\n            Зпапущен цикл мониторинга рынка start_market_survey(actual_shares)')
             await start_market_survey(actual_shares)  # Запускаем опрос параметров рынка внутри торгового дня
         logger.info(f'\n            Проведён цикл мониторинга рынка.\n'
